@@ -1,0 +1,16 @@
+﻿@{
+    var page = "";
+    if (Request.Url.Query == "")
+    {
+        page = "/Pages/Start.cshtml";
+    }
+    else if (Request.Url.Query.StartsWith("?locked=true,"))
+    {
+        page = "/Pages/LockedNotebook.cshtml";
+    }
+    else {
+        page = "/Pages/Notebook.cshtml";
+    }
+}
+
+@RenderPage(page, Request.Url.Query)

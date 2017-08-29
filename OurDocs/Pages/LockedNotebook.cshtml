@@ -1,0 +1,39 @@
+﻿@{
+    if (Request.Url.AbsoluteUri.Contains("LockedNotebook.cshtml"))
+    {
+        Response.Redirect(Request.Url.Authority + "/OurDocs/", true);
+    }
+    var originalQuery = Request.Url.Query.Split(',')[1];
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OurDocs by Translucency</title>
+    <script src="/Scripts/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+    <div style="position:absolute; top:35%; left:0; right:0; text-align:center;">
+        <div style="display:inline-block; text-align:left; padding:15px; background-color:lightcyan; border-radius:1em; border:1px solid dimgray">
+            <label style="font-family:sans-serif; font-size:.8em">This notebook has been locked by the owner.  </label><br /><br />
+            <label style="font-family:sans-serif; font-size:.8em">Please enter the PIN:</label><br />
+            <input id="inputPIN" type="password" pattern="[0-9]*" step="1" maxlength="10" placeholder="Enter the notebook PIN." onkeypress="if (event.keyCode == 13) { sendPIN(); }" />
+            <button id="buttonSendPIN" type="button" onclick="sendPIN()">Submit</button>
+        </div>
+    </div>
+    <script>
+        function sendPIN() {
+            var requestData = { "OriginalQuery": "@originalQuery", "PIN": $("#inputPIN").val() }
+            $.post("/OurDocs/Pages/CheckPIN.cshtml", JSON.stringify(requestData), function (returnData) {
+                if (returnData == "failed") {
+                    alert("Incorrect PIN.");
+                }
+                else {
+                    window.location.assign("/OurDocs/@originalQuery");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

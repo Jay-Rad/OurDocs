@@ -1,0 +1,263 @@
+﻿@{
+    if (Context.IsWebSocketRequest)
+    {
+        Microsoft.Web.WebSockets.WebSocketExtensions.AcceptWebSocketRequest(Context, new OurDocs.SocketHandler());
+        return;
+    }
+    if (Request.Url.AbsoluteUri.Contains("Notebook.cshtml"))
+    {
+        Response.Redirect(Request.Url.Authority + "/OurDocs/", true);
+    }
+    var appData = Server.MapPath("/App_Data/OurDocs/");
+    var strNotebook = "";
+    if (PageData.Count > 0)
+    {
+        string notebookID = (PageData[0] as string).Replace("?", "");
+        if (File.Exists(appData + "Notebooks\\" + notebookID + ".json") && Path.GetFileNameWithoutExtension(appData + "Notebooks\\" + notebookID + ".json") == notebookID)
+        {
+            strNotebook = File.ReadAllText(appData + "Notebooks\\" + notebookID + ".json");
+            var jsonNotebook = Json.Decode<OurDocs.Models.Notebook>(strNotebook);
+            if (jsonNotebook.IsPinSet)
+            {
+                if (!Session.Keys.Cast<string>().Contains("authenticated") || !(Session["authenticated"] is string) || (string)Session["authenticated"] != notebookID)
+                {
+                    Response.Redirect("/OurDocs/" + "?locked=true," + PageData[0], true);
+                    return;
+                }
+            }
+            strNotebook = Json.Encode(jsonNotebook);
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=450" />
+    <title>OurDocs by Translucency</title>
+    <link href="Styles.css" rel="stylesheet" />
+    <script src="/Scripts/jquery-3.1.1.min.js"></script>
+    <script src="/Scripts/jquery.tinymce.min.js"></script>
+    <script src="/Scripts/tinymce.min.js"></script>
+    <script src="/Scripts/Notebook.js"></script>
+    <script src="/Scripts/WebSocket.js"></script>
+</head>
+
+<body>
+    <div style="min-height:50px; background-color: lightgray; padding-top:10px">
+        <svg id="svgMainMenu" xmlns="http://www.w3.org/2000/svg" style="float:left; height:25px; width:25px; margin-left:10px; cursor:pointer; background-color:white;" onclick="toggleMenu()">
+            <line x1="5" x2="20" y1="7" y2="7" stroke="black" stroke-width="2" stroke-linecap="round"></line>
+            <line x1="5" x2="20" y1="13" y2="13" stroke="black" stroke-width="2" stroke-linecap="round"></line>
+            <line x1="5" x2="20" y1="19" y2="19" stroke="black" stroke-width="2" stroke-linecap="round"></line>
+        </svg>
+
+        <span style="font-size:1.5em; font-weight:bold; font-family:sans-serif; margin-left:10px; float:left">OurDocs</span>
+        <div style="float:right; margin-right:10px;">
+            <span style="font-family: sans-serif; font-size: .8em; color:dodgerblue; cursor:pointer;" onclick='$("#divUserList").slideToggle()'>Current Users:</span>
+            <span id="spanUsers" style="margin-left: 5px; font-family: sans-serif; font-size: .8em"></span>
+            <div id="divUserList" style="position:absolute; display:none; font-family: sans-serif; font-size:.8em; padding:10px; background-color: whitesmoke; border: 1px solid black; z-index:2">
+
+            </div>
+        </div>
+        <div id="divEmailWarning" style="float:left; clear:left; margin-left:10px">
+            <span style="color:red; font-size: .7em;">Recovery email hasn't been set.</span>
+            <span style="color:dodgerblue; font-size: .7em; cursor:pointer; margin-right:5px" onclick='alert("If you lose the link to your notebook, you will not be able to access it again unless you set a recovery email.  You can set one in the options menu under Security and Recovery.")'>more info</span>
+        </div>
+        <div style="text-align:right; float: right; margin-top:10px; margin-right:10px; clear:right">
+            <span style="font-family: sans-serif; font-size: .8em;">Link:</span>
+            <input id="inputLink" type="text" readonly style="margin-left:5px;color:gray; cursor: pointer;" onclick="this.select();" />
+            <button type="button" class="button" onclick='copyLink()'>Copy</button>
+        </div>
+        <div style="clear:both"></div>
+    </div>
+    <div id="divAddArrow" style="position:absolute; height:60px; width:300px; top:12px; left: 45px; z-index:3; display:none">
+        <svg id="svgArrow" style="height:40px; position:relative;">
+            <polygon points="0,20 30,0 30,10 60,10 60,30 30,30, 30,40" fill="forestgreen"></polygon>
+        </svg>
+        <br />
+        <label style="color:forestgreen; font-weight:bold; padding:5px; background-color:whitesmoke; border-radius:1em; border: 1px solid dimgray">Click here to add a document!</label>
+    </div>
+    <div id="divMainMenu" style="display:none; position:absolute; min-height:400px; left:10px; top:50px; bottom:50px; width:0; padding:10px; background-color: whitesmoke; border: 1px solid dimgray; z-index:2; overflow-y:auto">
+        <div style="margin-bottom: 15px;">
+            <label style="font-family:sans-serif; font-size:.8em">Username:</label><br />
+            <input id="inputUsername" type="text" placeholder="Enter a username." onkeypress="if (event.keyCode == 13) { setUsername(); }" />
+            <button id="buttonSetUsername" type="button" class="button" onclick="setUsername()">Set</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button id="buttonFullscreen" type="button" class="button" onclick="goFullscreen()">Go Fullscreen</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button type="button" onclick="exportDocument()" class="button">Export Document</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button id="buttonDeleteNotepad" type="button" onclick="deleteNotebook()" class="button">Delete Notebook</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button id="buttonSetSecurity" type="button" class="button" onclick="setSecurity()">Security and Recovery</button>
+            <img id="imgAdminLock" src="/Images/Lock_48x.png" title="Lock the security settings with an admin password." style="height:25px; float:right; cursor:pointer" onclick='adminLock()' />
+        </div>
+        <div id="divSecurity" style="margin-bottom:15px; display:none">
+            <label style="font-family:sans-serif; font-size:.8em">Email:</label><br />
+            <input id="inputEmail" type="email" placeholder="Enter a recovery email." onkeypress="if (event.keyCode == 13) { setEmail(); }" />
+            <button id="buttonSetEmail" type="button" class="button" onclick="setEmail()">Set</button><br />
+            <label style="font-family:sans-serif; font-size:.8em">PIN:</label><br />
+            <input id="inputPIN" type="password" pattern="[0-9]*" maxlength="10" placeholder="Enter a notebook PIN." onkeypress="if (event.keyCode == 13) { setPIN(); }" />
+            <button id="buttonSetPIN" type="button" class="button" onclick="setPIN()">Set</button><br />
+        </div>
+        <div style="font-family:sans-serif; font-size:.8em; margin-bottom: 10px">
+            Documents:
+            <img src="/Images/delete.png" title="Delete Document" style="float:right; height:20px; width:20px; margin-left:15px; cursor:pointer" onclick="deleteDocument()" />
+            <img src="/Images/rename.png" title="Rename Document" style="float:right; height:20px; width:20px; cursor:pointer" onclick="renameDocument()" />
+        </div>
+        <div id="divDocuments">
+            <div id="divAddDocument" class="page-tab" onclick="addDocument()">
+                <label class="page-tab-label">+ Add Document</label>
+            </div>
+        </div>
+    </div>
+    <div id="divDocumentFrame" style="border:2px solid lightgray">
+        <textarea id="textContent" hidden style="height:100%;"></textarea>
+    </div>
+    <div id="divChat" style="position:fixed; width:300px; bottom:0; right:0; max-width:90vw;">
+        <div id="divChatHeader" onmousedown="resizeChatMouse(event)" ontouchstart="resizeChatTouch(event)" >
+           <div style="position:relative; font-weight:bold; font-family:monospace; top:50%; transform:translateY(-50%)">Chat</div>
+        </div>
+        <div id="divChatMessageFrame" style="height:0; display:none; font-size:.8em; border:1px solid black; background-color:linen">
+            <div id="divChatMessages" style="position:absolute; top:53px; right:5px; left:5px; bottom:30px; overflow-y:scroll; overflow-x: hidden; word-wrap: break-word;">
+            </div>
+            <div style="position:absolute; bottom:5px; right:0; left:5px;">
+                <input id="inputChat" spellcheck="true" style="width:75%" onkeypress="if (event.keyCode == 13) { chatSubmit() } " />
+                <button id="buttonChatSubmit" class="button" onclick="chatSubmit()">Submit</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        var OurDocs = OurDocs || {};
+        var Temp = Temp || {};
+        tinymce.init({
+            selector: "#textContent",
+            plugins: "link, image",
+            menubar: "",
+            toolbar: "undo, redo, bold, italic, underline, strikethrough, alignleft, aligncenter, alignright, alignjustify, link, image, |, cut, copy, paste, bullist, numlist, outdent, indent, blockquote, removeformat, subscript, superscript, |, fontselect, fontsizeselect, styleselect",
+            height: 300,
+        }).then(function () {
+            OurDocs.Editor = tinymce.get("textContent");
+            OurDocs.Editor.contentDocument.body.setAttribute("spellcheck", true);
+            if ($.isEmptyObject(@Html.Raw(strNotebook)))
+            {
+                showError("The notebook couldn't be found.  Check the URL and try again.")
+                return;
+            }
+            try {
+                var result = JSON.parse('@Html.Raw(strNotebook)');
+            }
+            catch (ex) {
+                showError("There was a problem opening your notebook.  Please contact support.");
+                return;
+            };
+            OurDocs.NotebookID = result.NotebookID;
+            if (result.IsEmailSet)
+            {
+                $("#divEmailWarning").remove();
+            }
+            $("#inputLink").val(window.location.href);
+            if (result.Documents.length == 0) {
+                OurDocs.Editor.hide();
+                $.get("/OurDocs/Pages/Welcome.html", function (data) {
+                    $(document.body).append(data);
+                });
+                var point = function () {
+                    $("#svgArrow").animate({ left: "50px" }, 500, function () {
+                        $("#svgArrow").animate({ left: "0px" }, 500, point());
+                    });
+                };
+                $("#divAddArrow").show();
+                point();
+                $("#svgMainMenu").one("click", function () {
+                    var pointerInterval = window.setInterval(function () {
+                        var bounds = $("#divAddDocument")[0].getBoundingClientRect();
+                        var left;
+                        var top;
+                        if (bounds.left == 0)
+                        {
+                            left = 45;
+                        }
+                        else
+                        {
+                            left = Number(bounds.right + 5)
+                        }
+                        if (bounds.top == 0)
+                        {
+                            top = 12;
+                        }
+                        else
+                        {
+                            top = bounds.top;
+                        }
+                        $("#divAddArrow").animate({
+                            left: left + "px",
+                            top: top + "px"
+                        }, 500);
+                    }, 500);
+                    $("#divAddArrow").attr("interval", pointerInterval);
+
+                    $("#divAddDocument").one("click", function () {
+                        window.clearInterval($("#divAddArrow").attr("interval"));
+                        OurDocs.Editor.show();
+                        $("#divAddArrow").remove();
+                        $("#divWelcome").remove();
+                    });
+                });
+            }
+            else {
+                $("#divAddArrow").remove();
+                result.Documents.forEach(function (value) {
+                    addPageOption(value.DocumentName, value.DocumentID);
+                });
+                
+                if (!localStorage["OurDocsLastDocument"])
+                {
+                    OurDocs.Editor.hide();
+                    $.get("/OurDocs/Pages/Welcome.html", function (data) {
+                        $(document.body).append(data);
+                    });
+                    $("#svgMainMenu").one("click", function () {
+                        $("#divWelcome").remove();
+                        OurDocs.Editor.show();
+                    });
+                }
+            };
+            var chatMessages = result.ChatMessages;
+            if (chatMessages != undefined)
+            {
+                chatMessages.forEach(function (value) {
+                    var message = JSON.parse(atob(value));
+                    if (!$.isEmptyObject(message))
+                    {
+                        addChatMessage(message);
+                    }
+                });
+            }
+
+
+            if (OurDocs.WebSocket.Socket.readyState == WebSocket.OPEN) {
+                OurDocs.WebSocket.Socket.send('{ "Type": "NotebookID", "NotebookID": "' + result.NotebookID + '"}');
+                resumeState();
+            }
+
+            OurDocs.Editor.on("focus", function () {
+                if ($("#divMainMenu").is(":visible"))
+                {
+                    toggleMenu();
+                }
+            });
+            OurDocs.Editor.on("change", sendContent);
+            OurDocs.Editor.on("input", sendContent);
+            OurDocs.Editor.on("keypress", sendContent);
+        });
+
+    </script>
+</body>
+
+</html>

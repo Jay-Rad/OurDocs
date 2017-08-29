@@ -1,0 +1,150 @@
+@{
+    if (Request.HttpMethod == "POST")
+    {
+        var appData = Server.MapPath("/App_Data/OurDocs/");
+        var content = new StreamReader(Request.InputStream).ReadToEnd();
+        var jsonContent = Json.Decode(content);
+        if (jsonContent.Type.ToString() == "New")
+        {
+            var di = Directory.CreateDirectory(appData + "Notebooks");
+            foreach (var fi in di.GetFiles().Where(file=>!file.FullName.Contains("Chat_History")))
+            {
+                if (fi.LastWriteTime < DateTime.Now.AddMonths(-1) || Request.IsLocal)
+                {
+                    var objNotebook = Json.Decode<OurDocs.Models.Notebook>(File.ReadAllText(fi.FullName));
+                    if (objNotebook == null || objNotebook.Documents.Count == 0 || Request.IsLocal)
+                    {
+                        fi.Delete();
+                    }
+                }
+            }
+            var notebook = new OurDocs.Models.Notebook();
+            var strNotebook = Json.Encode(notebook);
+            File.WriteAllText(appData + "Notebooks\\" + notebook.NotebookID + ".json", strNotebook);
+            Response.Write(strNotebook);
+            Response.End();
+        }
+        else if (jsonContent.Type.ToString() == "Forgot")
+        {
+            if (!File.Exists(appData + "Emails\\" + jsonContent.Email + ".txt"))
+            {
+                Response.Write("failed");
+                Response.End();
+            }
+            else
+            {
+                var strIDs = File.ReadAllText(appData + "Emails\\" + jsonContent.Email + ".txt");
+                List<string> listIDs = Json.Decode<List<string>>(strIDs);
+                var strLinks = "";
+                for (var i = listIDs.Count - 1; i >= 0; i--)
+                {
+                    var id = listIDs[i];
+                    if (File.Exists(appData + "Notebooks\\" + id + ".json"))
+                    {
+                        strLinks += "http://ourdocs.invis.me/?" + id + "<br><br>";
+                    }
+                    else
+                    {
+                        listIDs.RemoveAt(i);
+                    }
+                }
+                WebMail.SmtpServer = "mail.translucency.info";
+                WebMail.From = "DoNotReply@translucency.info";
+                WebMail.UserName = "DoNotReply@translucency.info";
+                WebMail.Password = "38041F9D-1725-49D0-81AB-55CDB03F1C27";
+                string message = "Hello, OurDoccer!<br><br>As requested, here are the link(s) to your notebook(s):<br><br>" + strLinks + "Translucency Software<br>http://invis.me";
+                WebMail.Send(jsonContent.Email.ToString(), "OurDocs Link", message, "DoNotReply@translucency.info");
+                File.WriteAllText(appData + "Emails\\" + jsonContent.Email + ".txt", Json.Encode(listIDs));
+                Response.Write("ok");
+                Response.End();
+            }
+        }
+    }
+}
+
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=500" />
+    <title>OurDocs by Translucency</title>
+    <script src="/Scripts/jquery-3.1.1.min.js"></script>
+    <link href="/Styles.css" rel="stylesheet" />
+</head>
+
+<body>
+    <img src="/Images/document-multiple.png" alt="Document Background" style="position:absolute; top:0; left:50%; width:450px; margin-left:-225px; z-index: -1" />
+    <div style="text-align:center; font-size: 2em; font-weight: bold; margin-top:35px">
+        OurDocs
+    </div>
+    <div style="text-align:center; font-size: .75em">
+        by Translucency
+    </div>
+    <div style="text-align:center; font-size: .75em; font-family: serif; margin-top:35px; margin-left: -50px">
+        Incredibly easy document collaboration.
+    </div>
+    <div style="text-align:center; margin-top:35px; margin-left: -50px">
+        <button type="button" class="button" style="height:40px; margin-bottom:10px;" onclick="createDocs()">Create Docs</button><br />
+        <div id="divLinkWrapper" style="display: none; margin-bottom:10px;">
+            <div style="font-family: sans-serif; font-size:.75em">Here's your unique link:</div>
+            <div style="display: inline-block; padding: 5px; border-radius: 10px; border: 1px solid gray; background-color: lightgray">
+                <a id="aDocLink" href="" style="font-family: sans-serif; font-size: .75em"></a>
+            </div>
+        </div>
+        <button class="button" style="height:40px;" onclick="forgotLink()">Forgot Your Link?</button>
+        <div id="divForgotWrapper" style="display: none; margin-top:10px;">
+            <div style="display:inline-block; text-align:left">
+                <input id="inputEmail" type="text" required placeholder="Enter your email." onkeypress="if (event.keyCode == 13) { submitEmail() }" />
+                <button type="button" class="button" onclick="submitEmail()">Submit</button><br />
+                <div id="divEmailStatus" style="font-size:.8em"></div>
+            </div>
+        </div>
+    </div>
+    <div style="position: absolute;top: 365px;left: 50%; transform:translateX(-50%); font-size: .6em;font-family: sans-serif;color: dimgray;">
+        Powered by <a target="_blank" style="color: dimgray" href="http://www.asp.net">ASP.NET</a>, <a target="_blank" style="color: dimgray" href="https://www.tinymce.com/">TinyMCE</a>, and <a target="_blank" style="color: dimgray" href="https://www.bing.com/search?q=silverton+oregon+coffee">coffee</a>.
+    </div>
+    <div style="position: absolute;top: 410px;left: 50%; transform:translateX(-30%);font-size: .6em;font-family: sans-serif;color: dimgray;">
+        Copyright © 2017 Translucency.  All rights reserved.
+    </div>
+
+    <script>
+        function createDocs() {
+            $("#divLinkWrapper").css("display", "none");
+            $("#divForgotWrapper").css("display", "none");
+            var request = { "Type": "New" };
+            $.post(window.location.href, JSON.stringify(request), function (data) {
+                var notebook = JSON.parse(data);
+                var href = window.location.href;
+                if (href[href.length - 1] != "/") {
+                    href += "/";
+                }
+                $("#aDocLink").text(href + "?" + notebook.NotebookID);
+                $("#aDocLink").attr("href", href + "?" + notebook.NotebookID);
+            });
+            $("#divLinkWrapper").slideToggle();
+        }
+        function forgotLink() {
+            $("#divLinkWrapper").css("display", "none");
+            $("#divForgotWrapper").css("display", "none");
+            $("#divForgotWrapper").slideToggle();
+        }
+        function submitEmail() {
+            var request = { "Type": "Forgot", "Email": $("#inputEmail").val() };
+            var strRequest = JSON.stringify(request);
+            $.post(window.location.href, strRequest, function (data) {
+                if (data == "ok")
+                {
+                    $("#divEmailStatus").css("color", "green");
+                    $("#divEmailStatus").text("Your link has been sent to your email.");
+                }
+                else
+                {
+                    $("#divEmailStatus").css("color", "red");
+                    $("#divEmailStatus").text("Email address couldn't be found.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

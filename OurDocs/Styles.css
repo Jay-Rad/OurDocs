@@ -1,0 +1,83 @@
+﻿body {
+}
+
+.button {
+    border: 2px solid white;
+    border-radius: .75em;
+    background: rgb(55,55,55);
+    padding: 5px;
+    color: white;
+    cursor: pointer;
+}
+.button:hover {
+    background: rgb(100,100,100);
+    border: 2px solid lightgray;
+}
+
+
+.page-tab {
+    border: 2px solid lightgray;
+    background-color: white;
+    text-align: center;
+    font-family: sans-serif;
+    overflow-wrap: break-word;
+    height: 40px;
+    margin-bottom: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+    .page-tab:hover {
+        background-color: lightcyan;
+    }
+
+    .page-tab.hover {
+        background-color: lightcyan;
+    }
+
+    .page-tab.active {
+        background-color: bisque;
+    }
+
+.page-tab-label {
+    font-family: monospace;
+    font-weight: bold;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    display: block;
+    cursor: pointer;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+#svgMainMenu:hover line {
+    stroke: cyan;
+}
+
+#svgMainMenu.hover line {
+    stroke: cyan;
+}
+#divChatHeader {
+    height: 50px;
+    max-height: 10vh;
+    background-color: lightsteelblue;
+    border: 1px solid black;
+    border-top-left-radius: 10px;
+    cursor: pointer;
+    border-top-right-radius: 10px;
+    text-align: center;
+}
+#divChatHeader:hover {
+    background-color: steelblue;
+}
+
+#divChatHeader.hover {
+    background-color: steelblue;
+}

@@ -1,0 +1,24 @@
+﻿@{
+    if (Request.HttpMethod == "POST")
+    {
+        var appData = Server.MapPath("/App_Data/OurDocs/");
+        var strRequestData = new StreamReader(Request.InputStream).ReadToEnd();
+        var jsonRequestData = Json.Decode(strRequestData);
+        string notebookID = (jsonRequestData.OriginalQuery as string).Replace("?", "");
+        var strNotebook = File.ReadAllText(appData + "Notebooks\\" + notebookID + ".json");
+        var jsonNotebook = Json.Decode<OurDocs.Models.Notebook>(strNotebook);
+        if (!Crypto.VerifyHashedPassword(jsonNotebook.PIN, jsonRequestData.PIN))
+        {
+            Response.Write("failed");
+            Response.End();
+            return;
+        }
+        else
+        {
+            Session.Add("authenticated", notebookID);
+            Response.Write("ok");
+            Response.End();
+            return;
+        }
+    }
+}
