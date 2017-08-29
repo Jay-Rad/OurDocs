@@ -30,7 +30,7 @@ namespace OurDocs.Models
                 }
                 NotebookID = newID;
             }
-            while (File.Exists(HttpContext.Current.Server.MapPath(@"/App_Data/OurDocs/Notebooks/" + newID + ".json")));
+            while (File.Exists(HttpContext.Current.Server.MapPath(@"/App_Data/Notebooks/" + newID + ".json")));
             Documents = new List<DocumentEntry>();
             ChatMessages = new List<string>();
         }

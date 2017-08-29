@@ -6,9 +6,9 @@
     }
     if (Request.Url.AbsoluteUri.Contains("Notebook.cshtml"))
     {
-        Response.Redirect(Request.Url.Authority + "/OurDocs/", true);
+        Response.Redirect(Request.Url.Authority, true);
     }
-    var appData = Server.MapPath("/App_Data/OurDocs/");
+    var appData = Server.MapPath("/App_Data/");
     var strNotebook = "";
     if (PageData.Count > 0)
     {
@@ -21,7 +21,7 @@
             {
                 if (!Session.Keys.Cast<string>().Contains("authenticated") || !(Session["authenticated"] is string) || (string)Session["authenticated"] != notebookID)
                 {
-                    Response.Redirect("/OurDocs/" + "?locked=true," + PageData[0], true);
+                    Response.Redirect("/?locked=true," + PageData[0], true);
                     return;
                 }
             }
@@ -164,7 +164,7 @@
             $("#inputLink").val(window.location.href);
             if (result.Documents.length == 0) {
                 OurDocs.Editor.hide();
-                $.get("/OurDocs/Pages/Welcome.html", function (data) {
+                $.get("/Pages/Welcome.html", function (data) {
                     $(document.body).append(data);
                 });
                 var point = function () {
@@ -219,7 +219,7 @@
                 if (!localStorage["OurDocsLastDocument"])
                 {
                     OurDocs.Editor.hide();
-                    $.get("/OurDocs/Pages/Welcome.html", function (data) {
+                    $.get("/Pages/Welcome.html", function (data) {
                         $(document.body).append(data);
                     });
                     $("#svgMainMenu").one("click", function () {

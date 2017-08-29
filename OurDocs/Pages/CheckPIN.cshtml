@@ -1,7 +1,7 @@
 ﻿@{
     if (Request.HttpMethod == "POST")
     {
-        var appData = Server.MapPath("/App_Data/OurDocs/");
+        var appData = Server.MapPath("/App_Data/");
         var strRequestData = new StreamReader(Request.InputStream).ReadToEnd();
         var jsonRequestData = Json.Decode(strRequestData);
         string notebookID = (jsonRequestData.OriginalQuery as string).Replace("?", "");

@@ -3,11 +3,7 @@ OurDocs.WebSocket = {
     get Socket() {
         if (OurDocs.WebSocket.socket == undefined)
         {
-            if (window.location.hostname == "localhost") {
-                OurDocs.WebSocket.socket = new WebSocket("ws://" + location.host + location.pathname + "Pages/Notebook.cshtml");
-            } else {
-                OurDocs.WebSocket.socket = new WebSocket("wss://" + location.host + location.pathname + "Pages/Notebook.cshtml");
-            }
+            OurDocs.WebSocket.socket = new WebSocket(location.origin.replace("http", "ws") + "/Pages/Notebook.cshtml");
             OurDocs.WebSocket.SetHandlers();
         }
         return OurDocs.WebSocket.socket;

@@ -1,7 +1,7 @@
 @{
     if (Request.HttpMethod == "POST")
     {
-        var appData = Server.MapPath("/App_Data/OurDocs/");
+        var appData = Server.MapPath("/App_Data/");
         var content = new StreamReader(Request.InputStream).ReadToEnd();
         var jsonContent = Json.Decode(content);
         if (jsonContent.Type.ToString() == "New")

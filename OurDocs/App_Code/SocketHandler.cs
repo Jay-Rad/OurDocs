@@ -15,7 +15,7 @@ using System.Text;
 namespace OurDocs {
     public class SocketHandler : WebSocketHandler
     {
-        private static string appData = HttpContext.Current.Server.MapPath("/App_Data/OurDocs/");
+        private static string appData = HttpContext.Current.Server.MapPath("/App_Data/");
         private static WebSocketCollection socketCollection;
         public static WebSocketCollection SocketCollection
         {

@@ -31,7 +31,7 @@ namespace OurDocs.Models
                 }
                 DocumentID = newID;
             }
-            while (File.Exists(HttpContext.Current.Server.MapPath(@"/App_Data/OurDocs/Documents/" + newID + ".json")));
+            while (File.Exists(HttpContext.Current.Server.MapPath(@"/App_Data/Documents/" + newID + ".json")));
         }
         public string NotebookID { get; set; }
         public string DocumentID { get; set; }

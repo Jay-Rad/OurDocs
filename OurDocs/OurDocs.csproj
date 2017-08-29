@@ -89,6 +89,7 @@
   <ItemGroup>
     <Content Include="default.cshtml" />
     <None Include="packages.config" />
+    <Content Include="Global.asax" />
     <Content Include="Pages\CheckPIN.cshtml" />
     <Content Include="Pages\LockedNotebook.cshtml" />
     <Content Include="Pages\Notebook.cshtml" />

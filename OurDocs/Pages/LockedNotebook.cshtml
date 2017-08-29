@@ -1,7 +1,7 @@
 ﻿@{
     if (Request.Url.AbsoluteUri.Contains("LockedNotebook.cshtml"))
     {
-        Response.Redirect(Request.Url.Authority + "/OurDocs/", true);
+        Response.Redirect(Request.Url.Authority, true);
     }
     var originalQuery = Request.Url.Query.Split(',')[1];
 }
@@ -24,12 +24,12 @@
     <script>
         function sendPIN() {
             var requestData = { "OriginalQuery": "@originalQuery", "PIN": $("#inputPIN").val() }
-            $.post("/OurDocs/Pages/CheckPIN.cshtml", JSON.stringify(requestData), function (returnData) {
+            $.post("/Pages/CheckPIN.cshtml", JSON.stringify(requestData), function (returnData) {
                 if (returnData == "failed") {
                     alert("Incorrect PIN.");
                 }
                 else {
-                    window.location.assign("/OurDocs/@originalQuery");
+                    window.location.assign("@originalQuery");
                 }
             });
         }
