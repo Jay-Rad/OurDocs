@@ -41,7 +41,7 @@
                     var id = listIDs[i];
                     if (File.Exists(appData + "Notebooks\\" + id + ".json"))
                     {
-                        strLinks += "http://ourdocs.invis.me/?" + id + "<br><br>";
+                        strLinks += "http://ourdocs.lucency.co/?" + id + "<br><br>";
                     }
                     else
                     {
@@ -52,7 +52,7 @@
                 WebMail.From = "DoNotReply@translucency.info";
                 WebMail.UserName = "DoNotReply@translucency.info";
                 WebMail.Password = "38041F9D-1725-49D0-81AB-55CDB03F1C27";
-                string message = "Hello, OurDoccer!<br><br>As requested, here are the link(s) to your notebook(s):<br><br>" + strLinks + "Translucency Software<br>http://invis.me";
+                string message = "Hello, OurDoccer!<br><br>As requested, here are the link(s) to your notebook(s):<br><br>" + strLinks + "Translucency Software<br>http://lucency.co";
                 WebMail.Send(jsonContent.Email.ToString(), "OurDocs Link", message, "DoNotReply@translucency.info");
                 File.WriteAllText(appData + "Emails\\" + jsonContent.Email + ".txt", Json.Encode(listIDs));
                 Response.Write("ok");
@@ -71,6 +71,7 @@
     <title>OurDocs by Translucency</title>
     <script src="/Scripts/jquery-3.1.1.min.js"></script>
     <link href="/Styles.css" rel="stylesheet" />
+    <link rel="icon" href="~/favicon.ico" />
 </head>
 
 <body>
