@@ -85,7 +85,8 @@ namespace OurDocs {
                         var newDoc = new Document();
                         newDoc.DocumentName = "New Document";
                         newDoc.NotebookID = NotebookID;
-                        File.WriteAllText(appData + "Documents\\" + newDoc.DocumentID + ".json", Json.Encode(newDoc));
+                        Directory.CreateDirectory(Path.Combine(appData, "Documents"));
+                        File.WriteAllText(Path.Combine(appData, "Documents", newDoc.DocumentID + ".json"), Json.Encode(newDoc));
                         var strNotebook = File.ReadAllText(appData + "Notebooks\\" + NotebookID + ".json");
                         var jsonNotebook = Json.Decode<Notebook>(strNotebook);
                         jsonNotebook.Documents.Add(new DocumentEntry(newDoc.DocumentID, newDoc.DocumentName));

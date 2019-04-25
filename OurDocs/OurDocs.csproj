@@ -103,8 +103,7 @@
     <Content Include="Scripts\skins\lightgray\fonts\tinymce.ttf" />
     <Content Include="Scripts\skins\lightgray\fonts\tinymce.woff" />
     <Content Include="Scripts\themes\inlite\src\test\.eslintrc" />
-    <None Include="Properties\PublishProfiles\ourdocs.lucency.co - Web Deploy.pubxml" />
-    <None Include="Properties\PublishProfiles\SmarterASP.pubxml" />
+    <None Include="Properties\PublishProfiles\VPS.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
